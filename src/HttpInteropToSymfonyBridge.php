@@ -2,8 +2,7 @@
 
 namespace TheCodingMachine\HttpInteropBridge;
 
-use Interop\Http\ServerMiddleware\DelegateInterface;
-use Interop\Http\ServerMiddleware\MiddlewareInterface;
+use Interop\Http\Message\Strategies\ServerRequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
@@ -15,17 +14,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 /**
- * A http-interop middleware that can be used to access Symfony middlewares.
- *
- * Note: Symfony middlewares do not have the notion of "next" middleware built-in, so the wrapped middleware will
- * ALWAYS return a response and NEVER pass the request to the "next" middleware.
+ * A HTTP Message Strategy that handles request via a Symfony HttpKernel.
  */
-class HttpInteropToSymfonyBridge implements DelegateInterface, MiddlewareInterface
+class HttpInteropToSymfonyBridge implements ServerRequestHandlerInterface
 {
     /**
      * @var HttpKernelInterface
      */
-    private $symfonyMiddleware;
+    private $symfonyHttpKernel;
     /**
      * @var HttpMessageFactoryInterface
      */
@@ -36,31 +32,29 @@ class HttpInteropToSymfonyBridge implements DelegateInterface, MiddlewareInterfa
     private $httpFoundationFactory;
 
     /**
-     * @param HttpKernelInterface            $symfonyMiddleware     The next Symfony middleware to be called (after the http-interop middleware.
+     * @param HttpKernelInterface            $symfonyHttpKernel     The Symfony HttpKernel which handles the request.
      * @param HttpFoundationFactoryInterface $httpFoundationFactory The class in charge of translating PSR-7 request/response objects to Symfony objects. Defaults to Symfony default implementation
      * @param HttpMessageFactoryInterface    $httpMessageFactory    The class in charge of translating Symfony request/response objects to PSR-7 objects. Defaults to Symfony default implementation (that uses Diactoros)
      */
-    public function __construct(HttpKernelInterface $symfonyMiddleware, HttpFoundationFactoryInterface $httpFoundationFactory = null, HttpMessageFactoryInterface $httpMessageFactory = null)
+    public function __construct(HttpKernelInterface $symfonyHttpKernel, HttpFoundationFactoryInterface $httpFoundationFactory = null, HttpMessageFactoryInterface $httpMessageFactory = null)
     {
-        $this->symfonyMiddleware = $symfonyMiddleware;
+        $this->symfonyHttpKernel = $symfonyHttpKernel;
         $this->httpFoundationFactory = $httpFoundationFactory ?: new HttpFoundationFactory();
         $this->httpMessageFactory = $httpMessageFactory ?: new DiactorosFactory();
     }
 
     /**
-     * Process an incoming server request and return a response, optionally delegating
-     * to the next middleware component to create the response.
+     * Process a server request and return the produced response.
      *
      * @param ServerRequestInterface $request
-     * @param DelegateInterface|null $delegate
      *
      * @return ResponseInterface
      */
-    public function process(ServerRequestInterface $request, DelegateInterface $delegate = null)
+    public function __invoke(ServerRequestInterface $request)
     {
         $symfonyRequest = $this->httpFoundationFactory->createRequest($request);
 
-        $symfonyResponse = $this->symfonyMiddleware->handle($symfonyRequest);
+        $symfonyResponse = $this->symfonyHttpKernel->handle($symfonyRequest);
 
         return $this->httpMessageFactory->createResponse($symfonyResponse);
     }
