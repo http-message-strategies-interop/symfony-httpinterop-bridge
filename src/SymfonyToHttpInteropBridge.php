@@ -2,7 +2,7 @@
 
 namespace TheCodingMachine\HttpInteropBridge;
 
-use Interop\Http\Message\Strategies\ServerRequestHandlerInterface;
+use Interop\Http\Message\Strategies\ServerActionInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
@@ -18,9 +18,9 @@ class SymfonyToHttpInteropBridge implements HttpKernelInterface
     /**
      * The HTTP Message Strategy we bridge to.
      *
-     * @var ServerRequestHandlerInterface
+     * @var ServerActionInterface
      */
-    private $requestHandler;
+    private $serverAction;
 
     /**
      * @var HttpMessageFactoryInterface
@@ -32,13 +32,13 @@ class SymfonyToHttpInteropBridge implements HttpKernelInterface
     private $httpFoundationFactory;
 
     /**
-     * @param ServerRequestHandlerInterface            $requestHandler The HTTP Message Strategy we bridge to.
+     * @param ServerActionInterface          $serverAction The HTTP Message Strategy we bridge to.
      * @param HttpFoundationFactoryInterface $httpFoundationFactory The class in charge of translating PSR-7 request/response objects to Symfony objects. Defaults to Symfony default implementation
      * @param HttpMessageFactoryInterface    $httpMessageFactory    The class in charge of translating Symfony request/response objects to PSR-7 objects. Defaults to Symfony default implementation (that uses Diactoros)
      */
-    public function __construct(ServerRequestHandlerInterface $requestHandler, HttpFoundationFactoryInterface $httpFoundationFactory = null, HttpMessageFactoryInterface $httpMessageFactory = null)
+    public function __construct(ServerActionInterface $serverAction, HttpFoundationFactoryInterface $httpFoundationFactory = null, HttpMessageFactoryInterface $httpMessageFactory = null)
     {
-        $this->requestHandler = $requestHandler;
+        $this->serverAction = $serverAction;
         $this->httpFoundationFactory = $httpFoundationFactory ?: new HttpFoundationFactory();
         $this->httpMessageFactory = $httpMessageFactory ?: new DiactorosFactory();
     }
@@ -62,7 +62,7 @@ class SymfonyToHttpInteropBridge implements HttpKernelInterface
     {
         $psr7Request = $this->httpMessageFactory->createRequest($request);
 
-        $psr7Response = ($this->requestHandler)($psr7Request);
+        $psr7Response = ($this->serverAction)($psr7Request);
 
         return $this->httpFoundationFactory->createResponse($psr7Response);
     }

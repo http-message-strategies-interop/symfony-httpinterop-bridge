@@ -2,7 +2,7 @@
 
 namespace TheCodingMachine\HttpInteropBridge;
 
-use Interop\Http\Message\Strategies\ServerRequestHandlerInterface;
+use Interop\Http\Message\Strategies\ServerActionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 /**
  * A HTTP Message Strategy that handles request via a Symfony HttpKernel.
  */
-class HttpInteropToSymfonyBridge implements ServerRequestHandlerInterface
+class HttpInteropToSymfonyBridge implements ServerActionInterface
 {
     /**
      * @var HttpKernelInterface
